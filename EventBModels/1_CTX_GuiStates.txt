@@ -1,0 +1,32 @@
+context 1_CTX_GuiStates
+sets Modes
+constants
+	ModesG
+	StartUp
+	Start
+	SelfTest
+	Menu
+	Settings
+	Ventilation
+	Off
+	possTransG
+	PCV
+	PSV
+	batteryRange
+axioms
+  @axm1 ModesG ⊆ Modes
+  @axm2 partition(ModesG, {StartUp}, {Start}, {Menu}, {SelfTest}, {Settings}, Ventilation, {Off})
+  @axm3 partition(Ventilation, {PCV}, {PSV})
+  @axm4 possTransG ∈ BOOL→ℙ(ModesG×ModesG)
+  @axm5 possTransG={
+  TRUE↦
+  {Off↦StartUp,StartUp↦Start} ∪
+  ({StartUp}×Ventilation) ∪
+  {Start↦Menu, Start↦SelfTest, Menu↦Settings, SelfTest↦SelfTest, SelfTest↦Menu, Settings↦Menu} ∪
+  ({Off}×Ventilation) ∪
+  ({Menu, Settings}×Ventilation) ∪
+  (Ventilation×({Menu, Settings}∪Ventilation))
+  ,
+  FALSE↦(ModesG×{Off})}
+  @axm6 batteryRange=0‥120∗60∗10  //PAM: original
+end

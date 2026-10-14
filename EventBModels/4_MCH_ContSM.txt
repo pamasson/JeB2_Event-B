@@ -1,0 +1,203 @@
+machine 4_MCH_ContSM refines 2_MCH_GuiSM  sees 3_CTX_ContStates
+
+variables power onAC batLev switchover crashed modeG modeGP batFail modeC modeCP curTime
+
+invariants
+  @inv1 power=FALSE ∨ (onAC=FALSE ∧ (switchover=FALSE ∨ batLev=0 ∨ batFail=TRUE))
+        ⇔
+        modeC=Off
+  @inv2 modeCP ≠ modeC⇒modeCP↦modeC∈
+        possTransC(bool(power=TRUE ∧ (onAC=TRUE ∨ (switchover=TRUE ∧ batLev>0 ∧ batFail=FALSE))))
+  @inv3 modeC∈ ModesC ∧ modeCP ∈ ModesC
+  @inv4 power=TRUE ∧ (onAC=TRUE ∨ (switchover=TRUE ∧ batLev>0)) ∧ modeCP=Off⇒modeC=StartUp
+  @inv5 modeG∈{Settings,Menu}∪Ventilation
+        ⇒
+        modeC∈Ventilation ∪{FailSafe,VentilationOff}
+  @inv6 modeG∈Ventilation ⇒
+        modeC∈Ventilation∪{FailSafe}
+  @inv7 modeC=StartUp⇒modeG≠Settings
+
+events
+  event INITIALISATION extends INITIALISATION
+    then
+      @act10 modeC ≔  Off
+      @act11 modeCP ≔  Off
+  end
+
+  event powerON // CONT.2 // E1
+  extends powerON
+  then
+     @act4 modeC ≔ StartUp
+     @act5 modeCP ≔  modeC
+  end
+
+  event powerOff // E2
+  extends powerOff
+  then
+  	 @act4 modeC ≔ Off
+  	 @act5 modeCP ≔  modeC
+  end
+
+  event startUpEndedGui // E3
+  extends startUpEndedGui
+  where
+  	@grd3 modeC ∈ Ventilation ⇒ modeg=modeC
+  	@grd4 modeC ∉ Ventilation ⇒ modeg=Start
+  end
+
+  event startUpEndedCont // E4 - New Event
+  when
+  	@grd1 modeC = StartUp
+  then
+  	@act1 modeC ≔  SelfTest
+  	@act2 modeCP ≔  modeC
+  end
+
+  event crash  // E5 (old E4)
+  extends crash
+  end
+
+  event repare  // E6 (old E5)
+  extends repare
+  where
+	@grd4  modeC∈Ventilation ⇒ modeg=modeC
+	@grd5 power=TRUE ∧ (onAC=TRUE ∨ (switchover=TRUE ∧ batLev>0 ∧ batFail=FALSE))∧
+		modeC∉Ventilation
+		⇒
+		modeg=StartUp
+  end
+
+  event newPatient // E7 (old E6)
+  extends newPatient
+  when
+  	@grd2 modeC = SelfTest
+  end
+
+  event resumeVent // E8 (old E7)
+  extends resumeVent
+  when
+  	@grd2 modeC=SelfTest
+  then
+  	@act3 modeC ≔  VentilationOff
+  	@act4 modeCP ≔  modeC
+  end
+
+  event runAbortSelfTest // E9 (old E8)
+  extends runAbortSelfTest
+  when
+  	@grd2 modeC = SelfTest
+  end
+
+  event selfTestPassed   // E10 (old E9) // CONT4-4.1
+  extends selfTestPassed
+  when
+  	@grd2 modeC = SelfTest
+  then
+  	@act3 modeC ≔ VentilationOff
+  	@act4 modeCP ≔ VentilationOff
+  end
+
+  event setParam  // E11 (old E10)
+  extends setParam
+  end
+
+  event saveBackAbort // E12 (old E11)
+  extends saveBackAbort
+  any
+  modec
+  where
+	@grd3  modeC≠FailSafe
+	@grd4  modec∈ModesC
+	@grd5  modeC∈Ventilation ⇒ modec∈Ventilation ∧ modeg=modec
+	@grd6  modeC∉Ventilation ⇒modec=modeC ∧ modeg=Menu
+  then
+  	@act3 modeC ≔  modec
+  	@act4 modeCP ≔  modeC
+  end
+
+  event startStopPCVPSV // E13 (old E12)
+  extends startStopPCVPSV
+  any
+  modec
+  where
+	@grd5  modeC≠FailSafe
+	@grd6  modeg∈Ventilation ⇒ modec=modeg
+	@grd7  modeg∉Ventilation ⇒ modec=VentilationOff
+  then
+  	@act3 modeC ≔ modec
+  	@act4 modeCP ≔  {TRUE↦modeC, FALSE↦modeCP}(bool(modeC ∈ Ventilation ∪ {VentilationOff}))
+  end
+
+  event changeMode  // E14 (old E13)
+  extends changeMode
+  any
+  modec
+  where
+  	@grd3 modeC ∈ Ventilation∖{FailSafe} // PAM: ?? FailSafe n'est pas un élément de Ventilation
+  	@grd4 modec ∈ Ventilation
+  then
+  	@act3 modeC ≔ modec
+  	@act4 modeCP ≔  modeC
+  end
+
+  event failExternalPower  // E15 (old E14)
+  extends failExternalPower
+  any
+  modec
+  modecp
+  where
+	@grd5  modec ∈ ModesC ∧ modecp ∈ ModesC
+	@grd6  power= FALSE ⇒ modec=modeC ∧ modecp=modeCP
+	@grd7 power= TRUE ⇒
+	(
+		((switchover=TRUE ∧ batLev>0 ∧ batFail=FALSE ⇒modec=modeC ∧ modecp=modeCP) ∧
+		(¬(switchover=TRUE ∧ batLev>0 ∧ batFail=FALSE)⇒modec=Off ∧ modecp=modeC))
+	)
+  then
+  	@act4 modeC ≔ modec
+  	@act5 modeCP ≔ modecp
+  end
+
+  event failSelfTest // E16 (new event)
+  when
+  	@grd1 modeC = SelfTest
+  then
+  	@act1 modeC ≔  FailSafe
+  	@act2 modeCP ≔  modeC
+  end
+
+  event progress // E17 (old E15)
+  extends progress
+  any
+	modec
+  where
+	@grd8  modec∈{FailSafe,modeC, Off,StartUp}
+	@grd9  modec=FailSafe⇒modeC≠Off
+	@grd10 (onAC=TRUE ∨ (l>0 ∧ switchover=TRUE ∧ batf=FALSE)) ∧
+	power=TRUE ∧ modeC=Off
+	⇒
+	modec=StartUp
+	@grd11 (batLev>0 ∧ l>0)∨ switchover=FALSE ∨ onAC=TRUE ∨
+	power=FALSE
+	⇒
+	modec∈{modeC,FailSafe}
+	@grd12 (l=0 ∨ batf=TRUE ∨ switchover=FALSE) ∧ onAC=FALSE
+	⇒
+	modec=Off
+  then
+	@act6  modeC≔modec
+	@act7  modeCP≔{TRUE↦modeCP,FALSE↦modeC}(bool(modeC=modec))
+  end
+
+  event switchoverFail // E18 (old E16)
+  extends switchoverFail
+  any
+ 	modec
+  where
+ 	@grd4 onAC=FALSE ⇒ modec=Off
+ 	@grd5 onAC=TRUE ⇒ modec=modeC
+  then
+ 	@act4 modeC ≔  modec
+ 	@act5 modeCP ≔  {TRUE↦modeC, FALSE↦modeCP}(bool(modeC ≠ modec))
+  end
+ end

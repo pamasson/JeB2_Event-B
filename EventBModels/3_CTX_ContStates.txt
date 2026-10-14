@@ -1,0 +1,24 @@
+context 3_CTX_ContStates extends 1_CTX_GuiStates
+constants
+	ModesC
+	FailSafe
+	VentilationOff
+	possTransC
+axioms
+	@axm1 partition(Modes, {StartUp}, {Start}, {Menu}, {SelfTest},
+	{FailSafe}, {Settings}, {PSV}, {PCV}, {Off}, {VentilationOff})
+	@axm2 ModesC ⊆ Modes
+	@axm3 partition(ModesC, {StartUp}, {SelfTest}, {FailSafe},
+	{VentilationOff}, {Off}, {PCV}, {PSV}) // CONT1
+	@axm4 partition(Ventilation, {PCV}, {PSV})
+	@axm5 possTransC ∈ BOOL → ℙ(ModesC ×  ModesC)
+	@axm6 possTransC = {
+	  TRUE ↦
+	    {Off↦StartUp, StartUp↦SelfTest, StartUp↦FailSafe,
+ 	    SelfTest↦FailSafe, SelfTest↦VentilationOff, VentilationOff↦FailSafe,
+ 	    PSV↦PCV, PCV↦PSV}
+ 	    ∪ (Ventilation ×  {VentilationOff}) ∪ ({VentilationOff} ×  Ventilation)
+ 	    ∪ (Ventilation × {FailSafe}),
+	  FALSE ↦ ((ModesC∖{Off})×{Off})
+	}
+end

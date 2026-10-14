@@ -1,0 +1,223 @@
+machine 2_MCH_GuiSM sees 1_CTX_GuiStates
+variables
+power
+onAC
+batLev
+switchover
+crashed
+modeG
+modeGP
+curTime
+batFail
+invariants
+@inv1 power∈BOOL ∧ crashed∈BOOL ∧ batLev∈batteryRange ∧ curTime∈ℕ ∧ batFail∈BOOL
+@inv2 crashed=TRUE ∨ power=FALSE ∨ (onAC=FALSE ∧ (switchover=FALSE ∨ batLev=0 ∨ batFail=TRUE))
+⇔ modeG=Off
+@inv3 modeG∈ModesG ∧ modeGP∈ModesG
+@inv4 modeGP≠modeG ⇒ modeGP↦modeG ∈ possTransG(bool(power=TRUE ∧ crashed=FALSE ∧
+(onAC=TRUE ∨ (switchover=TRUE ∧ batLev>0 ∧ batFail=FALSE))))
+@inv5 modeG=Settings ⇒  modeGP∈{Menu}∪Ventilation
+
+events
+  event INITIALISATION
+  then
+  @act1 power ≔ FALSE
+  @act2 batLev :∈ batteryRange
+  @act3 onAC ≔  TRUE
+  @act4 switchover ≔  TRUE
+  @act5 crashed ≔ FALSE
+  @act6 modeG ≔ Off
+  @act7 modeGP ≔ Off
+  @act8 curTime ≔ 0
+  @act9 batFail :∈ BOOL
+  end
+
+  event powerON // CONT.2  //E1
+  when
+  @grd1 power=FALSE
+  @grd2 onAC=TRUE ∨ (switchover=TRUE ∧ batLev>0 ∧ batFail=FALSE)
+  then
+  @act1 power ≔  TRUE
+  @act2 modeG ≔  {FALSE↦StartUp, TRUE↦Off}(crashed)
+  @act3 modeGP ≔ modeG
+  end
+
+  event powerOff  //E2
+  when
+  @grd1 power=TRUE
+  then
+  @act1 power ≔ FALSE
+  @act2 modeG ≔ Off
+  @act3 modeGP ≔  modeG
+  end
+
+  event startUpEndedGui  //E3
+  any
+  	modeg
+  where
+  	@grd1 modeG=StartUp
+  	@grd2 modeg ∈ {Start} ∪ Ventilation
+  then
+  	@act1 modeG ≔  modeg
+  	@act2 modeGP ≔  modeG
+  end
+
+  event crash  //E4
+  when
+  	@grd1 crashed=FALSE
+  then
+  	@act1 crashed ≔ TRUE
+  	@act2 modeG ≔ Off
+  	@act3 modeGP ≔ Off  // PAM: why not modeGP := modeG as usual?
+  end
+
+  event repare  //E5
+  any
+  	modeg
+  where
+  	@grd1 crashed=TRUE
+  	@grd2 power=FALSE ∨ (onAC=FALSE ∧ (switchover=FALSE ∨ batLev=0 ∨ batFail=TRUE)) ⇒ modeg = Off
+  	@grd3 power=TRUE ∧ (onAC=TRUE ∨ (switchover=TRUE ∧ batLev>0 ∧ batFail=FALSE)) ⇒  modeg=StartUp
+  then
+  	@act1 crashed ≔  FALSE
+  	@act2 modeG ≔  modeg
+  	@act3 modeGP ≔  modeG
+  end
+
+  event newPatient  //E6
+  when
+  	@grd1 modeG=Start
+  then
+  	@act1 modeG ≔ SelfTest
+  	@act2 modeGP ≔ modeG
+  end
+
+  event resumeVent   /// E7
+  when
+  	@grd1 modeG=Start
+  then
+  	@act1 modeG ≔ Menu
+  	@act2 modeGP ≔ modeG
+  end
+
+  event runAbortSelfTest   // E8
+  when
+  	@grd1 modeG = SelfTest
+  then
+  	@act1 modeG ≔ SelfTest
+  	@act2 modeGP ≔ modeG
+  end
+
+  event selfTestPassed // CONT4-4.1   // E9
+  when
+  	@grd1 modeG = SelfTest
+  then
+  	@act1 modeG ≔  Menu
+  	@act2 modeGP ≔ modeG
+  end
+
+  event setParam   // E10
+  when
+  	@grd1 modeG ∈ {Menu} ∪ Ventilation
+  then
+  	@act1 modeG ≔ Settings
+  	@act2 modeGP ≔ modeG
+  end
+
+  event saveBackAbort   // E11
+  any modeg
+  where
+  	@grd1 modeG=Settings ∧ modeg∈ModesG
+  	@grd2 modeg ∈ Ventilation ∪ {Menu}
+  then
+  	@act1 modeG ≔  modeg
+  	@act2 modeGP ≔ modeG
+  end
+
+  event startStopPCVPSV   // E12
+  any modeg
+  where
+  	@grd1 modeG ∈ {Menu} ∪ Ventilation
+  	@grd2 modeg ∈ Ventilation ∪ {Menu}
+  	@grd3 modeG=Menu ⇒  modeg ∈ Ventilation
+  	@grd4 modeG ∈ Ventilation ⇒  modeg=Menu
+  then
+  	@act1 modeG ≔ modeg
+  	@act2 modeGP ≔  modeG
+  end
+
+  event changeMode // E13 // generic switching between modes Settings and Ventilation for the GUI
+  // and between different ventilation modes (PCV and PSV) for the controller
+  any
+  	modeg
+  where
+  	@grd1 modeG ∈ Ventilation
+  	@grd2 modeg ∈ Ventilation ∪ {Settings}
+  then
+  	@act1 modeG ≔ modeg
+  	@act2 modeGP ≔ modeG
+  end
+
+  event failExternalPower  // E14
+  any
+	modeg
+	modegp
+  where
+	@grd1 onAC=TRUE
+	@grd2 modeg ∈ ModesG ∧ modegp ∈ ModesG
+	@grd3 ¬(power=TRUE ∧ crashed=FALSE) ⇒ modeg=Off ∧ modegp=Off
+	@grd4 power=TRUE ∧ crashed=FALSE ⇒
+	(
+	((switchover=TRUE ∧ batLev>0 ∧ batFail=FALSE ⇒ modeg=modeG ∧ modegp=modeGP) ∧
+	(¬(switchover=TRUE ∧ batLev>0 ∧ batFail=FALSE)⇒ modeg=Off ∧ modegp=modeG))
+	)
+  then
+  	@act1  onAC≔FALSE
+	@act2  modeG≔modeg
+	@act3  modeGP≔modegp
+  end
+
+event progress // E15
+  any
+	step
+	l
+	modeg
+	batf
+  where
+  	@grd1 step∈ℕ1 ∧ l∈batteryRange ∧ batf∈BOOL
+	@grd2 batFail=TRUE ⇒ l=batLev
+	@grd3 onAC=TRUE ∧ batFail=FALSE ⇔ l=batLev+step //PAM: rechargement de +step
+	@grd4 onAC=FALSE ∧ batFail=FALSE ⇔ l=max({0,batLev−step}) //PAM: déchargement de -step
+	@grd5 (onAC=TRUE ∨ (l>0 ∧ switchover=TRUE ∧ batf=FALSE)) ∧
+		power=TRUE ∧ modeG=Off ∧
+		crashed=FALSE
+		⇒
+		modeg=StartUp
+	@grd6  (l=0 ∨ batf=TRUE ∨ switchover=FALSE) ∧ onAC=FALSE ⇒modeg=Off
+	@grd7 onAC=TRUE ∨
+		((l>0 ∧ batLev>0) ∧ switchover=TRUE ∧ batf=FALSE)
+		⇒
+		modeg=modeG
+  then
+  	@act1 curTime≔curTime+step
+	@act2 batLev≔l
+	@act3 modeG≔modeg
+	@act4 modeGP≔{TRUE↦modeGP, FALSE↦modeG}(bool(modeg=modeG))
+	@act5 batFail≔batf
+  end
+
+event switchoverFail // E16
+  any
+  	modeg
+  where
+  	@grd1 switchover=TRUE
+	@grd2 onAC=FALSE⇒modeg=Off
+	@grd3 onAC=TRUE⇒modeg=modeG
+  then
+  	@act1 switchover≔FALSE
+	@act2 modeG≔modeg
+	@act3 modeGP≔{TRUE↦modeG,FALSE↦modeGP}(bool(modeG≠modeg))
+  end
+
+
+end

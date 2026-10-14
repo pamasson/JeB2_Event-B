@@ -1,0 +1,125 @@
+{
+  "transitionList": [
+    {
+      "name": "$setup_constants",
+      "destState": {
+        "Ventilation": "$B.SetExtension(String('PCV'),String('PSV'))",
+        "StartUp": "StartUp",
+        "Start": "Start",
+        "SelfTest": "SelfTest",
+        "Menu": "Menu",
+        "Settings": "Settings",
+        "Off": "Off",
+        "PCV": "PCV",
+        "PSV": "PSV",
+        "ModesG": "$B.SetExtension(String('Menu'),String('Off'),String('PCV'),String('PSV'),String('SelfTest'),String('Settings'),String('Start'),String('StartUp'))",
+        "batteryRange": "$B.UpTo($B('0'),$B('10'))",
+        "Modes": "Modes",
+        "possTransG": "$B.SetExtension($B.Pair(false,$B.CartesianProduct($B.SetExtension(String('Menu'),String('Off'),String('PCV'),String('PSV'),String('SelfTest'),String('Settings'),String('Start'),String('StartUp')),$B.SetExtension(String('Off')))),$B.Pair(true,$B.SetExtension($B.Pair(String('Menu'),String('PCV')),$B.Pair(String('Menu'),String('PSV')),$B.Pair(String('Menu'),String('Settings')),$B.Pair(String('Off'),String('PCV')),$B.Pair(String('Off'),String('PSV')),$B.Pair(String('Off'),String('StartUp')),$B.Pair(String('PCV'),String('Menu')),$B.Pair(String('PCV'),String('PCV')),$B.Pair(String('PCV'),String('PSV')),$B.Pair(String('PCV'),String('Settings')),$B.Pair(String('PSV'),String('Menu')),$B.Pair(String('PSV'),String('PCV')),$B.Pair(String('PSV'),String('PSV')),$B.Pair(String('PSV'),String('Settings')),$B.Pair(String('SelfTest'),String('Menu')),$B.Pair(String('SelfTest'),String('SelfTest')),$B.Pair(String('Settings'),String('Menu')),$B.Pair(String('Settings'),String('PCV')),$B.Pair(String('Settings'),String('PSV')),$B.Pair(String('StartUp'),String('PCV')),$B.Pair(String('StartUp'),String('PSV')),$B.Pair(String('StartUp'),String('Start')),$B.Pair(String('Start'),String('Menu')),$B.Pair(String('Start'),String('SelfTest')))))",
+        "FailSafe": "FailSafe",
+        "VentilationOff": "VentilationOff",
+        "ModesC": "$B.SetExtension(String('FailSafe'),String('Off'),String('PCV'),String('PSV'),String('SelfTest'),String('StartUp'),String('VentilationOff'))",
+        "possTransC": "$B.SetExtension($B.Pair(false,$B.SetExtension($B.Pair(String('FailSafe'),String('Off')),$B.Pair(String('PCV'),String('Off')),$B.Pair(String('PSV'),String('Off')),$B.Pair(String('SelfTest'),String('Off')),$B.Pair(String('StartUp'),String('Off')),$B.Pair(String('VentilationOff'),String('Off')))),$B.Pair(true,$B.SetExtension($B.Pair(String('Off'),String('StartUp')),$B.Pair(String('PCV'),String('FailSafe')),$B.Pair(String('PCV'),String('PSV')),$B.Pair(String('PCV'),String('VentilationOff')),$B.Pair(String('PSV'),String('FailSafe')),$B.Pair(String('PSV'),String('PCV')),$B.Pair(String('PSV'),String('VentilationOff')),$B.Pair(String('SelfTest'),String('FailSafe')),$B.Pair(String('SelfTest'),String('VentilationOff')),$B.Pair(String('StartUp'),String('FailSafe')),$B.Pair(String('StartUp'),String('SelfTest')),$B.Pair(String('VentilationOff'),String('FailSafe')),$B.Pair(String('VentilationOff'),String('PCV')),$B.Pair(String('VentilationOff'),String('PSV')))))"
+      }
+    },
+    {
+      "name": "$initialise_machine",
+      "destState": {
+        "power": false,
+        "onAC": true,
+        "batLev": "$B('1')",
+        "switchover": true,
+        "crashed": false,
+        "modeG": "Off",
+        "modeGP": "Off",
+        "batFail": false,
+        "modeC": "Off",
+        "modeCP": "Off",
+        "curTime": "$B('0')"
+      }
+    },
+    {
+      "name": "powerON",
+      "destState": {
+        "power": true,
+        "onAC": true,
+        "batLev": "$B('1')",
+        "switchover": true,
+        "crashed": false,
+        "modeG": "StartUp",
+        "modeGP": "Off",
+        "batFail": false,
+        "modeC": "StartUp",
+        "modeCP": "Off",
+        "curTime": "$B('0')"
+      }
+    },
+    {
+      "name": "startUpEndedCont",
+      "destState": {
+        "power": true,
+        "onAC": true,
+        "batLev": "$B('1')",
+        "switchover": true,
+        "crashed": false,
+        "modeG": "StartUp",
+        "modeGP": "Off",
+        "batFail": false,
+        "modeC": "SelfTest",
+        "modeCP": "StartUp",
+        "curTime": "$B('0')"
+      }
+    },
+    {
+      "name": "startUpEndedGui",
+      "parameters": {
+        "modeg": "Start"
+      },
+      "destState": {
+        "power": true,
+        "onAC": true,
+        "batLev": "$B('1')",
+        "switchover": true,
+        "crashed": false,
+        "modeG": "Start",
+        "modeGP": "StartUp",
+        "batFail": false,
+        "modeC": "SelfTest",
+        "modeCP": "StartUp",
+        "curTime": "$B('0')"
+      }
+    },
+    {
+      "name": "newPatient",
+      "destState": {
+        "power": true,
+        "onAC": true,
+        "batLev": "$B('1')",
+        "switchover": true,
+        "crashed": false,
+        "modeG": "SelfTest",
+        "modeGP": "Start",
+        "batFail": false,
+        "modeC": "SelfTest",
+        "modeCP": "StartUp",
+        "curTime": "$B('0')"
+      }
+    },
+    {
+      "name": "failSelfTest",
+      "destState": {
+        "power": true,
+        "onAC": true,
+        "batLev": "$B('1')",
+        "switchover": true,
+        "crashed": false,
+        "modeG": "SelfTest",
+        "modeGP": "Start",
+        "batFail": false,
+        "modeC": "FailSafe",
+        "modeCP": "SelfTest",
+        "curTime": "$B('0')"
+      }
+    }
+  ]
+}
