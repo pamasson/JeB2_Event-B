@@ -1,0 +1,429 @@
+{
+  "transitionList": [
+    {
+      "name": "$setup_constants",
+      "destState": {
+        "Ventilation": "{PCV,PSV}",
+        "possTransG": "{(FALSE↦{(Start↦Off),(Menu↦Off),(Off↦Off),(PCV↦Off),(PSV↦Off),(SelfTest↦Off),(Settings↦Off),(StartUp↦Off)}),(TRUE↦{(Start↦Menu),(Start↦SelfTest),(Menu↦PCV),(Menu↦PSV),(Menu↦Settings),(Off↦PCV),(Off↦PSV),(Off↦StartUp),(PCV↦Menu),(PCV↦PCV),(PCV↦PSV),(PCV↦Settings),(PSV↦Menu),(PSV↦PCV),(PSV↦PSV),(PSV↦Settings),(SelfTest↦Menu),(SelfTest↦SelfTest),(Settings↦Menu),(Settings↦PCV),(Settings↦PSV),(StartUp↦Start),(StartUp↦PCV),(StartUp↦PSV)})}",
+        "batteryRange": "(0 ‥ 72000)",
+        "ModesG": "{Start,Menu,Off,PCV,PSV,SelfTest,Settings,StartUp}"
+      }
+    },
+    {
+      "name": "$initialise_machine",
+      "destState": {
+        "switchover": "TRUE",
+        "curTime": "0",
+        "onAC": "TRUE",
+        "modeG": "Off",
+        "modeGP": "Off",
+        "crashed": "FALSE",
+        "power": "FALSE",
+        "batFail": "FALSE",
+        "batLev": "0"
+      }
+    },
+    {
+      "name": "powerON",
+      "destState": {
+        "modeG": "StartUp",
+        "power": "TRUE"
+      },
+      "destStateNotChanged": [
+        "batFail",
+        "batLev",
+        "crashed",
+        "curTime",
+        "modeGP",
+        "onAC",
+        "switchover"
+      ]
+    },
+    {
+      "name": "startUpEndedGui",
+      "params": {
+        "modeg": "PSV"
+      },
+      "destState": {
+        "modeG": "PSV",
+        "modeGP": "StartUp"
+      },
+      "destStateNotChanged": [
+        "batFail",
+        "batLev",
+        "crashed",
+        "curTime",
+        "onAC",
+        "power",
+        "switchover"
+      ]
+    },
+    {
+      "name": "changeMode",
+      "params": {
+        "modeg": "PCV"
+      },
+      "destState": {
+        "modeG": "PCV",
+        "modeGP": "PSV"
+      },
+      "destStateNotChanged": [
+        "batFail",
+        "batLev",
+        "crashed",
+        "curTime",
+        "onAC",
+        "power",
+        "switchover"
+      ]
+    }
+  ],
+  "variableNames": [
+    "batFail",
+    "batLev",
+    "crashed",
+    "curTime",
+    "modeG",
+    "modeGP",
+    "onAC",
+    "power",
+    "switchover"
+  ],
+  "constantNames": [
+    "possTransG",
+    "batteryRange",
+    "Ventilation",
+    "ModesG"
+  ],
+  "setNames": [
+    "Modes"
+  ],
+  "machineOperationInfos": {
+    "newPatient": {
+      "operationName": "newPatient",
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "modeG"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP"
+      ]
+    },
+    "powerON": {
+      "operationName": "powerON",
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "batFail",
+        "batLev",
+        "crashed",
+        "modeG",
+        "onAC",
+        "power",
+        "switchover"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP",
+        "power"
+      ]
+    },
+    "powerOff": {
+      "operationName": "powerOff",
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "modeG",
+        "power"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP",
+        "power"
+      ]
+    },
+    "setParam": {
+      "operationName": "setParam",
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "Ventilation",
+        "modeG"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP"
+      ],
+      "typeMap": {
+        "'Ventilation'": "set(global('Modes'))"
+      }
+    },
+    "startStopPCVPSV": {
+      "operationName": "startStopPCVPSV",
+      "parameterNames": [
+        "modeg"
+      ],
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "Ventilation",
+        "modeG"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP"
+      ],
+      "typeMap": {
+        "'Ventilation'": "set(global('Modes'))",
+        "modeg": "global('Modes')"
+      }
+    },
+    "selfTestPassed": {
+      "operationName": "selfTestPassed",
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "modeG"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP"
+      ]
+    },
+    "saveBackAbort": {
+      "operationName": "saveBackAbort",
+      "parameterNames": [
+        "modeg"
+      ],
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "ModesG",
+        "Ventilation",
+        "modeG"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP"
+      ],
+      "typeMap": {
+        "'ModesG'": "set(global('Modes'))",
+        "'Ventilation'": "set(global('Modes'))",
+        "modeg": "global('Modes')"
+      }
+    },
+    "resumeVent": {
+      "operationName": "resumeVent",
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "modeG"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP"
+      ]
+    },
+    "failExternalPower": {
+      "operationName": "failExternalPower",
+      "parameterNames": [
+        "modegp",
+        "modeg"
+      ],
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "ModesG",
+        "batFail",
+        "batLev",
+        "crashed",
+        "modeG",
+        "modeGP",
+        "onAC",
+        "power",
+        "switchover"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP",
+        "onAC"
+      ],
+      "typeMap": {
+        "'ModesG'": "set(global('Modes'))",
+        "modeg": "global('Modes')",
+        "modegp": "global('Modes')"
+      }
+    },
+    "crash": {
+      "operationName": "crash",
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "crashed"
+      ],
+      "writtenVariables": [
+        "crashed",
+        "modeG",
+        "modeGP"
+      ]
+    },
+    "runAbortSelfTest": {
+      "operationName": "runAbortSelfTest",
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "modeG"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP"
+      ]
+    },
+    "startUpEndedGui": {
+      "operationName": "startUpEndedGui",
+      "parameterNames": [
+        "modeg"
+      ],
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "Ventilation",
+        "modeG"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP"
+      ],
+      "typeMap": {
+        "'Ventilation'": "set(global('Modes'))",
+        "modeg": "global('Modes')"
+      }
+    },
+    "switchoverFail": {
+      "operationName": "switchoverFail",
+      "parameterNames": [
+        "modeg"
+      ],
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "modeG",
+        "modeGP",
+        "onAC",
+        "switchover"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP",
+        "switchover"
+      ],
+      "typeMap": {
+        "modeg": "global('Modes')"
+      }
+    },
+    "changeMode": {
+      "operationName": "changeMode",
+      "parameterNames": [
+        "modeg"
+      ],
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "Ventilation",
+        "modeG"
+      ],
+      "writtenVariables": [
+        "modeG",
+        "modeGP"
+      ],
+      "typeMap": {
+        "'Ventilation'": "set(global('Modes'))",
+        "modeg": "global('Modes')"
+      }
+    },
+    "progress": {
+      "operationName": "progress",
+      "parameterNames": [
+        "l",
+        "modeg",
+        "step",
+        "batf"
+      ],
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "batFail",
+        "batLev",
+        "batteryRange",
+        "crashed",
+        "curTime",
+        "modeG",
+        "modeGP",
+        "onAC",
+        "power",
+        "switchover"
+      ],
+      "writtenVariables": [
+        "batFail",
+        "batLev",
+        "curTime",
+        "modeG",
+        "modeGP"
+      ],
+      "typeMap": {
+        "modeg": "global('Modes')",
+        "step": "integer",
+        "l": "integer",
+        "batf": "boolean"
+      }
+    },
+    "repare": {
+      "operationName": "repare",
+      "parameterNames": [
+        "modeg"
+      ],
+      "topLevel": true,
+      "type": "EVENTB",
+      "readVariables": [
+        "batFail",
+        "batLev",
+        "crashed",
+        "modeG",
+        "onAC",
+        "power",
+        "switchover"
+      ],
+      "writtenVariables": [
+        "crashed",
+        "modeG",
+        "modeGP"
+      ],
+      "typeMap": {
+        "modeg": "global('Modes')"
+      }
+    }
+  },
+  "globalIdentifierTypes": {
+    "switchover": "boolean",
+    "curTime": "integer",
+    "onAC": "boolean",
+    "modeGP": "global('Modes')",
+    "modeG": "global('Modes')",
+    "crashed": "boolean",
+    "batteryRange": "set(integer)",
+    "power": "boolean",
+    "batLev": "integer",
+    "batFail": "boolean"
+  },
+  "metadata": {
+    "fileType": "Trace",
+    "formatVersion": 6,
+    "savedAt": "2026-10-14T22:06:19.898552Z",
+    "creator": "traceReplay",
+    "proB2KernelVersion": "4.15.0",
+    "proBCliVersion": "1.15.0-final",
+    "modelName": "2_MCH_GuiSM_mch"
+  }
+}
